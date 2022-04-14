@@ -239,8 +239,9 @@ for i in range(maxgen):
 			gbestpop = pop[pbestfitness.argmin()].copy()
 	print('更新后的最好群体适应度：', gbestfitness)
 	print('更新后的最好群体：', gbestpop)
-	gbestfiness_list.append(gbestfitness)
+	gbestfitness_list.append(gbestfitness)
+	print (i)
 with open(args.o, 'w') as f:
-	for i in gbestfiness_list:
+	for i in gbestfitness_list:
 		print(str(i) + '\n')
 		
