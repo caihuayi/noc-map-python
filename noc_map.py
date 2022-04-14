@@ -4,6 +4,7 @@ import math
 import numpy as np
 from shortestpath import dijkstra
 from matplotlib import pyplot as plt
+from buildNoCTOPO import buildNoCTOPO
 
 #获取mesh参数
 def getMesh(mesh_x):
@@ -82,6 +83,7 @@ def getGarphPara(mesh_x):
 			          [17,24],[18,21],[19,21],[20,21],[21,22],[21,23],[23,25]]
 		weight = [54,54,54,53,53,53,54,55,54,54,54,52,54,52,52,52,54,54,54,56,56,54,55,55,54,54,54,
 		 	      54,54,56]
+		
 	return graph, task_graph, weight
 
 #获取链路负载方差
@@ -91,6 +93,7 @@ def get_load_var(task_encoder):
 	for i in range(len(comm)):
 		link = []
 		path = dijkstra(graph, comm[i][0], comm[i][1])
+		print ('path: ' + str(path))
 		for index in range(len(path)-1):
 			min_num = min(path[index], path[index+1])
 			if abs(path[index+1] - path[index]) == 1:
@@ -109,6 +112,7 @@ def get_load_var(task_encoder):
 				link_comm.append([j, index])
 				sum = sum + weight[index]
 		load[j] = sum
+		print ('load[' + str(j) + ']: ' + str(load[j]))
 	value_list = [value for value in load.values()]
 	load_var = np.array(value_list).var()
 	return load_var

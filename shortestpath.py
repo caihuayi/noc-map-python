@@ -26,7 +26,7 @@ def dijkstra(graph,src,dest):
 	    src = x
 	path=[]
 	pred=dest
-	print(predecessors)
+	# print(predecessors)
 	while pred != None:
 		path.append(pred)
 		pred=predecessors.get(pred,None)
