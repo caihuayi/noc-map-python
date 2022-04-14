@@ -4,10 +4,18 @@ import random
 import numpy as np
 from shortestpath import dijkstra
 from matplotlib import pyplot as plt
+from buildNoCTOPO import buildNoCTOPO
+from tgffjson2np import tgffjson2np
+import argparse
 
 def getMesh(mesh_x):
 	router_num = mesh_x * mesh_x
 	parameter = mesh_x * (mesh_x - 1)
+	return router_num, parameter
+
+def getMesh_v2(mesh_x, mesh_y, mesh_z):
+	router_num = mesh_x * mesh_y * mesh_z
+	parameter = mesh_x * (mesh_y - 1)
 	return router_num, parameter
 
 def getGarphPara(mesh_x):
@@ -77,6 +85,12 @@ def getGarphPara(mesh_x):
 			  [17,20],[17,24],[18,21],[18,25],[19,21],[20,21],[21,22],[21,23],[23,25]]
 		weight = [50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,
 		  50,50,50,50,50]
+	return graph, task_graph, weight
+
+def getGarphPara_v2(mesh_x, mesh_y, mesh_z, path):
+	graph = buildNoCTOPO(mesh_x, mesh_y, mesh_z)
+	task_graph, weight = tgffjson2np(path)
+
 	return graph, task_graph, weight
 
 def get_load_var(task_encoder):
@@ -170,9 +184,28 @@ alpha = 0.5
 # gamma = 0.3
 popsize = 150
 
-mesh_x = 3
-router_num, parameter = getMesh(mesh_x)
-graph, task_graph, weight = getGarphPara(mesh_x)
+mesh_x = 4
+#router_num, parameter = getMesh(mesh_x)
+#graph, task_graph, weight = getGarphPara(mesh_x)
+mesh_y = 4
+mesh_z = 3
+path = '/home/caihuayi/lab/tgff-3.6/examples/kbasic_task.json'
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-x', '--mesh_x', type=int, default=4, help="mesh_x")
+parser.add_argument('-y', '--mesh_y', type=int, default=4, help="mesh_y")
+parser.add_argument('-z', '--mesh_z', type=int, default=4, help="mesh_z")
+parser.add_argument('-j', '--tgffjson', type=str, default='/home/caihuayi/lab/tgff-3.6/examples/kbasic_task.json', help='path of tgffjson')
+parser.add_argument('-o', '--output', type=str, default='pso.txt', help='path of output')
+args = parser.parse_args()
+
+mesh_x = args.mesh_x
+mesh_y = args.mesh_y
+mesh_z = args.mesh_z
+path = args.tgffjson
+
+router_num, parameter = getMesh_v2(mesh_x, mesh_y, mesh_z)
+graph, task_graph, weight = getGarphPara_v2(mesh_x, mesh_y, mesh_z, path)
 
 pop, v, fitness = init_popvfitness(popsize, router_num)
 print("初始种群：", pop)
@@ -182,7 +215,7 @@ print('初始适应度：', fitness)
 gbestpop, gbestfitness, pbestpop, pbestfitness = get_init_best(fitness, pop)
 print('初始最好种群与适应度：', gbestpop, gbestfitness)
 print('初始最好个体与适应度：', pbestpop, pbestfitness)
-
+gbestfitness_list = []
 maxgen = 200
 for i in range(maxgen):
 	for j in range(popsize):
@@ -206,3 +239,8 @@ for i in range(maxgen):
 			gbestpop = pop[pbestfitness.argmin()].copy()
 	print('更新后的最好群体适应度：', gbestfitness)
 	print('更新后的最好群体：', gbestpop)
+	gbestfiness_list.append(gbestfitness)
+with open(args.o, 'w') as f:
+	for i in gbestfiness_list:
+		print(str(i) + '\n')
+		

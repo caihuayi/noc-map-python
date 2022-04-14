@@ -5,11 +5,17 @@ import numpy as np
 from shortestpath import dijkstra
 from matplotlib import pyplot as plt
 from buildNoCTOPO import buildNoCTOPO
-
+from tgffjson2np import tgffjson2np
+import argparse
 #获取mesh参数
 def getMesh(mesh_x):
 	router_num = mesh_x * mesh_x
 	parameter = mesh_x * (mesh_x - 1)
+	return router_num, parameter
+
+def getMesh_v2(mesh_x, mesh_y, mesh_z):
+	router_num = mesh_x * mesh_y * mesh_z
+	parameter = mesh_x * (mesh_y - 1)
 	return router_num, parameter
 
 #获取图参数
@@ -86,6 +92,13 @@ def getGarphPara(mesh_x):
 		
 	return graph, task_graph, weight
 
+def getGarphPara_v2(mesh_x, mesh_y, mesh_z, path):
+	graph = buildNoCTOPO(mesh_x, mesh_y, mesh_z)
+	task_graph, weight = tgffjson2np(path)
+
+	return graph, task_graph, weight
+
+
 #获取链路负载方差
 def get_load_var(task_encoder):
 	comm = [[task_encoder[i[0]-1], task_encoder[i[1]-1]] for i in task_graph]
@@ -93,7 +106,7 @@ def get_load_var(task_encoder):
 	for i in range(len(comm)):
 		link = []
 		path = dijkstra(graph, comm[i][0], comm[i][1])
-		print ('path: ' + str(path))
+		# print ('path: ' + str(path))
 		for index in range(len(path)-1):
 			min_num = min(path[index], path[index+1])
 			if abs(path[index+1] - path[index]) == 1:
@@ -112,7 +125,7 @@ def get_load_var(task_encoder):
 				link_comm.append([j, index])
 				sum = sum + weight[index]
 		load[j] = sum
-		print ('load[' + str(j) + ']: ' + str(load[j]))
+		# print ('load[' + str(j) + ']: ' + str(load[j]))
 	value_list = [value for value in load.values()]
 	load_var = np.array(value_list).var()
 	return load_var
@@ -170,13 +183,13 @@ class GA(object):
 		self.iter_num = iter_num
 
 	def get_slots(self, vec):
-  		slots = [i for i in range(1, self.router_num + 1)]
-  		task_encoder = []
-  		for i in range(len(vec)):
-  			index = slots[vec[i]]
-  			task_encoder.append(index)
-  			del slots[vec[i]]
-  		return task_encoder
+		slots = [i for i in range(1, self.router_num + 1)]
+		task_encoder = []
+		for i in range(len(vec)):
+			index = slots[vec[i]]
+			task_encoder.append(index)
+			del slots[vec[i]]
+		return task_encoder
 
 	def mutate(self, vec, domain):
   		i = random.randint(0, self.router_num - 1)
@@ -201,6 +214,7 @@ class GA(object):
   			pop.append(vec)
 		topelite = int(self.elit * self.popsize)
 		for i in range(self.iter_num):
+			print (i)
 			load_var = []
 			for v in pop:
 				v1 = self.get_slots(v)
@@ -226,12 +240,33 @@ class GA(object):
 			print(load_var[0])
 		print(self.get_slots(load_var[0][1]))
 
-
-
 mesh_x = 4
-router_num, parameter = getMesh(mesh_x)
-graph, task_graph, weight = getGarphPara(mesh_x)
-SA(router_num).run()
+mesh_y = 4
+mesh_z = 3
+path = '/home/caihuayi/lab/tgff-3.6/examples/kbasic_task.json'
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-x', '--mesh_x', type=int, default=4, help="mesh_x")
+parser.add_argument('-y', '--mesh_y', type=int, default=4, help="mesh_y")
+parser.add_argument('-z', '--mesh_z', type=int, default=4, help="mesh_z")
+parser.add_argument('-j', '--tgffjson', type=str, default='/home/caihuayi/lab/tgff-3.6/examples/kbasic_task.json', help='path of tgffjson')
+parser.add_argument('-a', '--algorthime', type=int, default=1, help='1:SA 2:GA default:SA')
+args = parser.parse_args()
+
+mesh_x = args.mesh_x
+mesh_y = args.mesh_y
+mesh_z = args.mesh_z
+path = args.tgffjson
+
+fitness_list = []
+# router_num, parameter = getMesh(mesh_x)
+router_num, parameter = getMesh_v2(mesh_x, mesh_y, mesh_z)
+# graph, task_graph, weight = getGarphPara(mesh_x)
+graph, task_graph, weight = getGarphPara_v2(mesh_x, mesh_y, mesh_z, path)
+if (args.j == 1):
+	SA(router_num).run()
+elif (args.j == 2):
+	GA(router_num).run()
 # GA(router_num).run()
 # sum = sum(weight)
 # print(sum)
